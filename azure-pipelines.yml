@@ -1,0 +1,46 @@
+trigger:
+- master
+ 
+pool:
+  vmImage: 'ubuntu-latest'
+ 
+variables:
+  buildConfiguration: 'Release'
+ 
+steps:
+- task: UseDotNet@2
+  displayName: 'Use .NET Core SDK 2.1.505'
+  inputs:
+    packageType: sdk
+    version: 3.x
+ 
+- task: DotNetCoreCLI@2
+  displayName: 'Restore project dependencies'
+  inputs:
+    command: 'restore'
+    projects: '**/*.csproj'
+ 
+- task: DotNetCoreCLI@2
+  displayName: 'Build the project - Release'
+  inputs:
+    command: 'build'
+    version: 3.x
+    arguments: '--no-restore --configuration Release'
+    projects: '**/*.csproj'
+    workingDirectory: '$(System.DefaultWorkingDirectory)'
+- task: ArchiveFiles@2
+  displayName: 'Archive application'
+  inputs:
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+    verbose: true
+  
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: ''
+    appType: webAppLinux
+    appName: ''
+    package:  $(System.ArtifactsDirectory)**/*.zip
